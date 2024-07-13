@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>당신만을 위한 업무 체크리스트</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 로딩 스피너 스타일 */
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        #loader-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-10">
+    <!-- 로딩 스피너 컨테이너 -->
+    <div id="loader-container">
+        <div class="loader"></div>
+    </div>
+
+    <nav class="bg-black shadow-md rounded-lg p-6 mb-8 flex justify-between items-center">
+        <div class="text-2xl font-bold text-white text-center">당신의 성공적인 서바이벌을 위하여</div>
+        <!-- <button onclick="openRandomImage()" class="bg-blue-500 text-white px-4 py-2 rounded">힘들때 보는 것</button> -->
+    </nav>
+    <div class="container mx-auto" id="content" style="display: none;">
+        <h1 class="text-3xl font-bold mb-8">체크리스트 <button onclick="resetAllTasks()" class="bg-red-500 text-white px-4 py-2 rounded ml-4">전체 초기화하기</button></h1>
+        <div class="text-lg mb-4">오늘 날짜: {{ today }} <span>오늘의 할일 : {{ completed_tasks|length }}/{{ total_tasks }}</span></div>
+
+        {% for category in tasks %}
+        <div class="mb-8 p-6 bg-white shadow-md rounded-lg">
+            <div class="text-2xl font-semibold mb-4">{{ category.category }}</div>
+            {% for task in category.tasks %}
+            <div class="ml-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-xl font-semibold mb-2">{{ task.title }}</div>
+                        <div class="ml-4">
+                            {% for step in task.steps %}
+                            <div class="mb-2 text-gray-700">{{ step|safe }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ url_for('complete_task') }}">
+                        <input type="hidden" name="category" value="{{ category.category }}">
+                        <input type="hidden" name="title" value="{{ task.title }}">
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">완료</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <!-- 해야할 일 입력 폼 -->
+        <div class="mb-8 p-6 bg-white shadow-md rounded-lg">
+            <h2 class="text-3xl font-bold mb-4">해야할 일</h2>
+            <form method="POST" action="{{ url_for('add_task') }}">
+                <div class="flex items-center">
+                    <input type="text" name="title" class="border p-4 mr-4 flex-grow" placeholder="할일을 입력해주세요 :)">
+                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">추가</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 추가된 작업 목록 -->
+        {% if additional_tasks %}
+        <div class="mb-8 p-6 bg-white shadow-md rounded-lg">
+            <h2 class="text-3xl font-bold mb-4">해야할 작업</h2>
+            {% for task in additional_tasks %}
+            <div class="ml-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-xl font-semibold mb-2">{{ task.title }}</div>
+                    </div>
+                    <div>
+                        <form method="POST" action="{{ url_for('complete_task') }}" class="inline">
+                            <input type="hidden" name="category" value="추가된 작업">
+                            <input type="hidden" name="title" value="{{ task.title }}">
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">완료</button>
+                        </form>
+                        <button onclick="confirmDelete('{{ task.title }}')" class="bg-red-500 text-white px-4 py-2 rounded ml-2">삭제</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <h2 class="text-3xl font-bold mb-4">완료된 작업 <button onclick="toggleCompletedTasks()" class="bg-blue-500 text-white px-4 py-2 rounded ml-4">숨기기</button></h2>
+        <div class="mb-8 p-6 bg-white shadow-md rounded-lg" id="completedTasksContainer">
+            {% for task in completed_tasks %}
+            <div class="ml-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                <div class="text-xl font-semibold mb-2">{{ task.category }} - {{ task.title }}</div>
+                <div class="ml-4 text-gray-700">완료 시간: {{ task.time }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 차트를 그리기 위한 캔버스 -->
+        <canvas id="taskChart" width="400" height="200"></canvas>
+
+        <div class="flex items-center mt-8">
+            <div class="ml-8 text-xl" id="completionMessage"></div>
+        </div>
+
+        <!-- 삭제 확인 모달 -->
+        <div id="deleteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <p class="text-lg mb-4">정말로 삭제하시겠습니까?</p>
+                <div class="flex justify-end">
+                    <button id="cancelDelete" class="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2">취소</button>
+                    <form method="POST" action="{{ url_for('delete_task') }}" id="deleteForm" class="inline">
+                        <input type="hidden" name="title" id="deleteTaskTitle">
+                        <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded">삭제</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // 완료된 작업 시간 데이터를 전달받기
+            var taskTimes = {{ task_times|tojson|safe }};
+            
+            // 시간을 시간대별로 그룹화
+            function groupByHour(taskTimes) {
+                var hours = Array(24).fill(0);
+                taskTimes.forEach(function(time) {
+                    var hour = new Date(time).getHours();
+                    hours[hour]++;
+                });
+                return hours;
+            }
+
+            var hourlyData = groupByHour(taskTimes);
+
+            // 시간대별로 막대 그래프 색상을 다르게 지정
+            var colors = [
+                'rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)', 
+                'rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)', 'rgba(255, 159, 64, 0.2)',
+                'rgba(199, 199, 199, 0.2)', 'rgba(83, 102, 255, 0.2)', 'rgba(159, 99, 132, 0.2)',
+                'rgba(200, 162, 235, 0.2)', 'rgba(180, 206, 86, 0.2)', 'rgba(170, 192, 192, 0.2)',
+                'rgba(100, 102, 255, 0.2)', 'rgba(150, 159, 64, 0.2)', 'rgba(200, 199, 199, 0.2)',
+                'rgba(83, 199, 255, 0.2)', 'rgba(159, 159, 132, 0.2)', 'rgba(200, 200, 235, 0.2)',
+                'rgba(180, 150, 86, 0.2)', 'rgba(170, 170, 192, 0.2)', 'rgba(100, 150, 255, 0.2)',
+                'rgba(150, 100, 64, 0.2)', 'rgba(200, 150, 199, 0.2)', 'rgba(83, 150, 255, 0.2)'
+            ];
+
+            var borderColors = colors.map(color => color.replace('0.2', '1'));
+
+            var ctx = document.getElementById('taskChart').getContext('2d');
+            var taskChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (v, k) => k + ':00'),
+                    datasets: [{
+                        label: 'Completed Tasks',
+                        data: hourlyData,
+                        backgroundColor: colors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // 완료된 작업과 미완료된 작업의 수를 계산
+            var completedTasksCount = {{ completed_tasks|length }};
+            var totalTasksCount = {{ total_tasks }};
+            var incompleteTasksCount = totalTasksCount - completedTasksCount;
+
+            // 메시지 표시
+            var messageElement = document.getElementById('completionMessage');
+            if (completedTasksCount === 0) {
+                messageElement.textContent = "큰 목표를 이루고 싶으면 허락을 구하지 마라. – 미상";
+            } else if (completedTasksCount === 1) {
+                messageElement.textContent = "상황을 가장 잘 활용하는 사람이 가장 좋은 상황을 맞는다. – 존 우든";
+            } else if (completedTasksCount === 2) {
+                messageElement.textContent = "창조적인 삶을 살려면 내가 틀릴지도 모른다는 공포를 버려야 한다. – 미상";
+            } else if (completedTasksCount === 3) {
+                messageElement.textContent = "일반적인 것을 잃을 위험을 감수하지 않으면 평범한 것에 만족해야 한다. – 짐 론";
+            } else if (completedTasksCount === 4) {
+                messageElement.textContent = "신뢰의 이유는 안전하거나 확실해서가 아니라, 위험을 감수할 용의가 있어서이다. – 미상";
+            } else if (completedTasksCount === 5) {
+                messageElement.textContent = " 한 가지 생각을 선택하라. 그 생각을 당신의 삶으로 만들어라. 그걸 생각하고, 꿈꾸고, 그에 기반해서 살아가라. 당신의 몸의 모든 부분, 뇌, 근육, 신경을 그 생각으로 가득 채우고 다른 생각은 다 내버려둬라. 이것이 성공하는 방법이다. – 스와미 비베카난다";
+            } else if (completedTasksCount === 6) {
+                messageElement.textContent = "추구할 수 있는 용기가 있다면 우리의 모든 꿈은 이뤄질 수 있다. – 월트 디즈니";
+            } else if (completedTasksCount === 7) {
+                messageElement.textContent = "창조적인 삶을 살려면 내가 틀릴지도 모른다는 공포를 버려야 한다. – 미상";
+            } else if (completedTasksCount === 8) {
+                messageElement.textContent = "기다리는 사람에게 좋은 일이 생기지만, 찾아나서는 사람에게는 더 좋은 일이 생긴다. – 미상";
+            } else if (completedTasksCount === 9) {
+                messageElement.textContent = "창조적인 삶을 살려면 내가 틀릴지도 모른다는 공포를 버려야 한다. – 미상";
+            } else if (completedTasksCount === 10) {
+                messageElement.textContent = "늘 하던 대로 하면 늘 얻던 것을 얻는다. – 미상";
+            } else if (completedTasksCount === 11) {
+                messageElement.textContent = "열정을 잃지 않고 실패에서 실패로 걸어가는 것이 성공이다. – 윈스턴 처칠";
+            } else if (completedTasksCount === 12) {
+                messageElement.textContent = "애벌레가 세상이 끝났다고 생각하는 순간 나비로 변했다. - 속담";
+            } else if (completedTasksCount === 13) {
+                messageElement.textContent = "성공한 사업가들은 긍정적인 에너지를 주는 사람들이지 가져가는 사람들이 아니다. – 미상";
+            } else if (completedTasksCount === 14) {
+                messageElement.textContent = "성공한 사람을 볼 때 당신은 대중에게 드러난 영예만 보지, 절대 그 영예를 얻기 위해 했던 개인적 희생은 보지 않는다. – 바입하브 샤";
+            } else if (completedTasksCount === 15) {
+                messageElement.textContent = "기회는 일어나는 것이 아니라 만들어내는 것이다. – 크리스 그로서";
+            } else if (completedTasksCount === 16) {
+                messageElement.textContent = "성공한 사람이 되려고 노력하기보다 가치있는 사람이 되려고 노력하라. – 알버트 아인슈타인";
+            } else if (completedTasksCount === 17) {
+                messageElement.textContent = "위대한 정신을 가진 사람들은 생각을 논한다. 평범한 사람들은 사건을 논한다. 마음이 좁은 사람들은 사람들을 논한다. – 엘리너 루즈벨트";
+            } else {
+                messageElement.textContent = "할 일을 모두 끝내셨군요! 고생많으셨어요 :) 오늘 하루도 당신이 있어서 빛났어요. 고마워요!";
+            }
+
+            // 삭제 확인 모달 창 기능
+            function confirmDelete(title) {
+                document.getElementById('deleteTaskTitle').value = title;
+                document.getElementById('deleteModal').classList.remove('hidden');
+            }
+
+            document.getElementById('cancelDelete').onclick = function() {
+                document.getElementById('deleteModal').classList.add('hidden');
+            };
+
+            // 30분(1800초) 후에 알림을 표시하는 함수
+            setTimeout(function() {
+                alert("오래 앉아있었습니다. 스트레칭을 해주세요");
+            }, 1800000); // 1800000ms = 30분
+
+            // 힘들때 보는 것 페이지를 새 창으로 여는 함수
+            function openRandomImage() {
+                window.open('/random_image', '_blank', 'width=600,height=400');
+            }
+
+            // 전체 초기화하기 기능
+            function resetAllTasks() {
+                if (confirm("모든 작업을 초기화하시겠습니까?")) {
+                    fetch('{{ url_for('reset_all_tasks') }}', {
+                        method: 'POST',
+                    }).then(() => window.location.reload());
+                }
+            }
+
+            // 완료된 작업 토글 기능
+            function toggleCompletedTasks() {
+                const container = document.getElementById('completedTasksContainer');
+                container.classList.toggle('hidden');
+            }
+
+            // 페이지 로딩이 완료되면 로딩 스피너를 숨기고 콘텐츠를 표시
+            window.onload = function() {
+                document.getElementById('loader-container').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            }
+        </script>
+    </div>
+</body>
+</html>
