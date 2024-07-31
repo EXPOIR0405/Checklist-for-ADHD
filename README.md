@@ -8,3 +8,7 @@ Please note that the design aspect has not been a primary focus. The checklist e
 
 디자인 부분은 거의 신경 쓰지 못했음을 참고해 주세요. 기능과 실용성에 중점을 두었으며, 필요에 따라 디자인을 개선할 수 있습니다.
 # Checklist-for-ADHD
+
+# 2024-07-31 디자인 기능 구현 #
+
+기존 디자인을 보다 깔끔하게 개선해보았습니다.
