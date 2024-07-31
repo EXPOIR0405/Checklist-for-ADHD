@@ -19,6 +19,14 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        @media (max-width: 640px) {
+            .task-container {
+                flex-direction: column;
+            }
+            .task-container button {
+                margin-top: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
@@ -26,41 +34,41 @@
         <div class="loader"></div>
     </div>
 
-    <div class="container mx-auto px-4 py-8 max-w-5xl" id="content" style="display: none;">
-        <nav class="bg-indigo-600 shadow-lg rounded-xl p-6 mb-8">
-            <div class="text-2xl font-bold text-white text-center tracking-tight">당신의 성공적인 서바이벌을 위하여💪</div>
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl" id="content" style="display: none;">
+        <nav class="bg-indigo-600 shadow-lg rounded-xl p-4 sm:p-6 mb-8">
+            <div class="text-xl sm:text-2xl font-bold text-white text-center tracking-tight">당신의 성공적인 서바이벌을 위하여💪</div>
         </nav>
 
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">체크리스트</h1>
-            <button onclick="resetAllTasks()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300 shadow-md hover:shadow-lg">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-0">체크리스트</h1>
+            <button onclick="resetAllTasks()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300 shadow-md hover:shadow-lg text-sm sm:text-base">
                 전체 초기화
             </button>
         </div>
 
-        <div class="text-lg mb-6">
+        <div class="text-base sm:text-lg mb-6">
             오늘 날짜: <span class="font-semibold">{{ today }}</span>
             <span class="ml-4">오늘의 할일: <span class="font-semibold">{{ completed_tasks|length }}/{{ total_tasks }}</span></span>
         </div>
 
         {% for category in tasks %}
-        <div class="mb-8 p-6 bg-white shadow-lg rounded-xl hover:shadow-xl transition duration-300">
-            <div class="text-2xl font-semibold mb-4 text-indigo-600">{{ category.category }}</div>
+        <div class="mb-8 p-4 sm:p-6 bg-white shadow-lg rounded-xl hover:shadow-xl transition duration-300">
+            <div class="text-xl sm:text-2xl font-semibold mb-4 text-indigo-600">{{ category.category }}</div>
             {% for task in category.tasks %}
-            <div class="ml-4 mb-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition duration-300">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <div class="text-xl font-semibold mb-2">{{ task.title }}</div>
-                        <div class="ml-4">
+            <div class="ml-2 sm:ml-4 mb-4 p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition duration-300">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center task-container">
+                    <div class="mb-2 sm:mb-0">
+                        <div class="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">{{ task.title }}</div>
+                        <div class="ml-2 sm:ml-4">
                             {% for step in task.steps %}
-                            <div class="mb-2 text-gray-600">{{ step|safe }}</div>
+                            <div class="mb-1 text-sm sm:text-base text-gray-600">{{ step|safe }}</div>
                             {% endfor %}
                         </div>
                     </div>
                     <form method="POST" action="{{ url_for('complete_task') }}">
                         <input type="hidden" name="category" value="{{ category.category }}">
                         <input type="hidden" name="title" value="{{ task.title }}">
-                        <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300">완료</button>
+                        <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300 text-sm sm:text-base">완료</button>
                     </form>
                 </div>
             </div>
@@ -68,28 +76,28 @@
         </div>
         {% endfor %}
 
-        <div class="mb-8 p-6 bg-white shadow-lg rounded-xl">
-            <h2 class="text-2xl font-bold mb-4 text-indigo-600">해야할 일</h2>
-            <form method="POST" action="{{ url_for('add_task') }}" class="flex items-center">
-                <input type="text" name="title" class="border border-gray-300 p-2 rounded-lg flex-grow mr-4" placeholder="할일을 입력해주세요 :)">
-                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300">추가</button>
+        <div class="mb-8 p-4 sm:p-6 bg-white shadow-lg rounded-xl">
+            <h2 class="text-xl sm:text-2xl font-bold mb-4 text-indigo-600">해야할 일</h2>
+            <form method="POST" action="{{ url_for('add_task') }}" class="flex flex-col sm:flex-row items-center">
+                <input type="text" name="title" class="border border-gray-300 p-2 rounded-lg flex-grow mr-0 sm:mr-4 mb-2 sm:mb-0 w-full sm:w-auto" placeholder="할일을 입력해주세요 :)">
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300 w-full sm:w-auto">추가</button>
             </form>
         </div>
 
         {% if additional_tasks %}
-        <div class="mb-8 p-6 bg-white shadow-lg rounded-xl">
-            <h2 class="text-2xl font-bold mb-4 text-indigo-600">해야할 작업</h2>
+        <div class="mb-8 p-4 sm:p-6 bg-white shadow-lg rounded-xl">
+            <h2 class="text-xl sm:text-2xl font-bold mb-4 text-indigo-600">해야할 작업</h2>
             {% for task in additional_tasks %}
-            <div class="ml-4 mb-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition duration-300">
-                <div class="flex justify-between items-center">
-                    <div class="text-xl font-semibold">{{ task.title }}</div>
-                    <div>
-                        <form method="POST" action="{{ url_for('complete_task') }}" class="inline">
+            <div class="ml-2 sm:ml-4 mb-4 p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition duration-300">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div class="text-lg sm:text-xl font-semibold mb-2 sm:mb-0">{{ task.title }}</div>
+                    <div class="flex flex-col sm:flex-row">
+                        <form method="POST" action="{{ url_for('complete_task') }}" class="inline mb-2 sm:mb-0 sm:mr-2">
                             <input type="hidden" name="category" value="추가된 작업">
                             <input type="hidden" name="title" value="{{ task.title }}">
-                            <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300 mr-2">완료</button>
+                            <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300 text-sm sm:text-base w-full sm:w-auto">완료</button>
                         </form>
-                        <button onclick="confirmDelete('{{ task.title }}')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300">삭제</button>
+                        <button onclick="confirmDelete('{{ task.title }}')" class="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300 text-sm sm:text-base w-full sm:w-auto">삭제</button>
                     </div>
                 </div>
             </div>
@@ -98,31 +106,33 @@
         {% endif %}
 
         <div class="mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-indigo-600">완료된 작업</h2>
-                <button onclick="toggleCompletedTasks()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                <h2 class="text-xl sm:text-2xl font-bold text-indigo-600 mb-2 sm:mb-0">완료된 작업</h2>
+                <button onclick="toggleCompletedTasks()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition duration-300 text-sm sm:text-base">
                     완료된 작업 보기/숨기기
                 </button>
             </div>
-            <div id="completedTasksContainer" class="p-6 bg-white shadow-lg rounded-xl">
+            <div id="completedTasksContainer" class="p-4 sm:p-6 bg-white shadow-lg rounded-xl">
                 {% for task in completed_tasks %}
-                <div class="mb-4 p-4 bg-gray-50 rounded-xl">
-                    <div class="text-xl font-semibold mb-2">{{ task.category }} - {{ task.title }}</div>
-                    <div class="text-gray-600">완료 시간: {{ task.time }}</div>
+                <div class="mb-4 p-3 sm:p-4 bg-gray-50 rounded-xl">
+                    <div class="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">{{ task.category }} - {{ task.title }}</div>
+                    <div class="text-sm sm:text-base text-gray-600">완료 시간: {{ task.time }}</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <div class="mb-8 p-6 bg-white shadow-lg rounded-xl">
-            <h2 class="text-2xl font-bold mb-4 text-indigo-600">작업 통계</h2>
-            <canvas id="taskChart" width="400" height="200"></canvas>
+        <div class="mb-8 p-4 sm:p-6 bg-white shadow-lg rounded-xl">
+            <h2 class="text-xl sm:text-2xl font-bold mb-4 text-indigo-600">작업 통계</h2>
+            <div style="position: relative; height: 40vh; width: 100%;">
+                <canvas id="taskChart"></canvas>
+            </div>
         </div>
 
-        <div class="text-xl font-semibold text-center p-4 bg-indigo-100 rounded-xl" id="completionMessage"></div>
+        <div class="text-lg sm:text-xl font-semibold text-center p-4 bg-indigo-100 rounded-xl" id="completionMessage"></div>
     </div>
 
-    <div id="deleteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+    <div id="deleteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <p class="text-lg mb-4">정말로 삭제하시겠습니까?</p>
             <div class="flex justify-end">
@@ -179,6 +189,8 @@
                 }]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -190,11 +202,12 @@
                             },
                             stepSize: 1
                         },
-                        max: Math.max(...hourlyData) + 1 // 데이터의 최대값보다 1 큰 값으로 설정
+                        max: Math.max(...hourlyData) + 1
                     }
                 }
             }
         });
+
 
         // 완료된 작업과 미완료된 작업의 수를 계산
         var completedTasksCount = {{ completed_tasks|length }};
